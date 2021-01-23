@@ -22,7 +22,7 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(
+add_executable(Connect4-AI
         src/main.cpp
         src/Game.cpp include/Game.h
         include/AI.h

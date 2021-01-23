@@ -30,6 +30,7 @@
 *.exe
 *.out
 *.app
+Connect4-AI
 
 # CLion
 cmake-build-debug
