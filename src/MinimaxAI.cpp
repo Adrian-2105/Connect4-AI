@@ -1,12 +1,16 @@
 #include "../include/MinimaxAI.h"
 #include <vector>
+#include <iostream>
+
 
 using namespace std;
 
-#define DEPTH 5
+#define DEPTH 2
 #define INF 99999999
+#define column first
+#define value second
 
-int maxValue(Game &game, char piece, int actualDepth, int depth);
+pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth);
 int minValue(Game &game, char piece, int actualDepth, int depth);
 int heuristic(Game &game, char piece);
 
@@ -20,52 +24,45 @@ int MinimaxAI::nextMove(Game &game, char piece) {
         table.push_back(v);
     }
 
-    int value = maxValue(game, piece, 0, DEPTH);
-
-    int column = 0;
-    for (int i = 0; i < w; i++) {
-        if (!game.isColumnFilled(i)) {
-            Game *next = game.clone();
-            if (value == heuristic(*next, piece)) {
-                column = i;
-                delete next;
-                break;
-            } else
-                delete next;
-        }
-    }
-
-    return column;
+    pair<int, int> sol = maxValue(game, piece, 0, DEPTH);
+    cout << "heuristic obtained: " << sol.value << endl;
+    return sol.column;
 }
 
 
 
-int maxValue(Game &game, char piece, int actualDepth, int depth) {
+pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth) {
     if (actualDepth >= depth) {
-        return heuristic(game, piece);
+        return {0,heuristic(game, piece)};
     }
 
     int result = game.isFinished();
     if (result == TABLE_FULL)
-        return 0;
+        return {0,0};
 
-    if ((piece == PIECE_X) ? result == WIN_X : result == WIN_O) {
-        return INF;
+    if (result == WIN_X) {
+        return {0, INF};
+    } else if (result == WIN_O){
+        return {0, -INF};
     }
 
     int best = -INF;
+    int decision = 0;
 
     for (int i = 0; i < game.getWidth(); i++) {
         if (!game.isColumnFilled(i)) {
             Game * next = game.clone();
-            int v = minValue(game, piece, actualDepth + 1, depth);
-            if (v > best)
+            next->insertPiece(piece, i);
+            int v = minValue(*next, piece, actualDepth + 1, depth);
+            if (v > best){
                 best = v;
+                decision = i;
+            }
             delete next;
         }
     }
 
-    return best;
+    return {decision, best};
 }
 
 
@@ -79,8 +76,10 @@ int minValue(Game &game, char piece, int actualDepth, int depth) {
     if (result == TABLE_FULL)
         return 0;
 
-    if ((piece == PIECE_X) ? result == WIN_X : result == WIN_O) {
+    if (result == WIN_X) {
         return INF;
+    } else if (result == WIN_O){
+        return -INF;
     }
 
     int best = INF;
@@ -88,7 +87,8 @@ int minValue(Game &game, char piece, int actualDepth, int depth) {
     for (int i = 0; i < game.getWidth(); i++) {
         if (!game.isColumnFilled(i)) {
             Game * next = game.clone();
-            int v = maxValue(game, piece, actualDepth + 1, depth);
+            next->insertPiece(PIECE_X, i);
+            int v = maxValue(*next, piece, actualDepth + 1, depth).value;
             if (v < best)
                 best = v;
             delete next;
@@ -100,7 +100,91 @@ int minValue(Game &game, char piece, int actualDepth, int depth) {
 
 
 
-int heuristic(Game &game, char piece) {
+int heuristic(Game &game, char piece) { // Es una mierda
+    int longitudes[10];
+    for(int i = 0; i<10; i++)
+        longitudes[i] = 0;
+    bool visited[game.getWidth()][game.getHeight()];
+    for(int i = 0; i<game.getWidth(); i++)
+        for(int j = 0; j<game.getHeight(); j++)
+            visited[i][j] = false;
+    for(int i = 0; i < game.getWidth(); i++)
+        for(int j = game.getHeight(); j >= 0 && !visited[i][j] && game.at(i,j) != EMPTY; j--){
+            char actual = game.at(i, j);
+            // count horizontal consecutives
+            int cont = 1;
+            int J = j - 1;
+            while (J >= 0 && game.at(i,J) == actual) {
+                cont++;
+                J--;
+                visited[i][J] = true;
+            }
+            J = j + 1;
+            while (J < game.getWidth() && game.at(i, J) == actual) {
+                cont++;
+                J++;
+                visited[i][J] = true;
+            }
+            longitudes[2*(actual==piece)+cont]++;
 
-    return 1;
+            // count vertical consecutives
+            cont = 1;
+            int I = i-1;
+            while (I >= 0 && game.at(I,j) == actual) {
+                cont++;
+                I--;
+                visited[I][j] = true;
+            }
+            I = i + 1;
+            while (I < game.getHeight() && game.at(I, j) == actual) {
+                cont++;
+                I++;
+                visited[I][j] = true;
+            }
+            longitudes[2*(actual==piece)+cont]++;
+
+            // count diagonal UP->DOWN consecutives
+            cont = 1;
+            I = i-1;
+            J = j - 1;
+            while (I >= 0 && J >= 0 && game.at(I,J) == actual) {
+                cont++;
+                I--;
+                J--;
+                visited[I][J] = true;
+            }
+            I = i + 1;
+            J = j + 1;
+            while (I < game.getWidth() && J < game.getHeight() && game.at(I, J) == actual) {
+                cont++;
+                I++;
+                J++;
+                visited[I][J] = true;
+            }
+            longitudes[2*(actual==piece)+cont]++;
+
+            // count diagonal DOWN->UP consecutives
+            cont = 1;
+            I = i + 1;
+            J = j - 1;
+            while (I < game.getWidth() && J >= 0 && game.at(I,J) == actual) {
+                cont++;
+                I++;
+                J--;
+                visited[I][J] = true;
+            }
+            I = i - 1;
+            J = j + 1;
+            while (I >= 0 && J < game.getWidth() && game.at(I, J) == actual) {
+                cont++;
+                I--;
+                J++;
+                visited[I][J] = true;
+            }
+            longitudes[3*(actual==piece)+cont]++;
+            
+        }
+    int results = longitudes[4]-longitudes[1] + longitudes[5]-longitudes[2] + longitudes[6]-longitudes[3];
+    //cout << results << endl;
+    return results;
 }
