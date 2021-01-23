@@ -15,7 +15,7 @@ int main() {
     int result, n;
 
     while ((result = game.isFinished()) == UNFINISHED) {
-        cout << string(100, '\n');
+        //cout << string(100, '\n');
         game.print();
 
         cout << "X move: \n";

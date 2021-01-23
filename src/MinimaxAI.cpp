@@ -2,10 +2,11 @@
 #include <vector>
 #include <iostream>
 
+//#define DEBUG
 
 using namespace std;
 
-#define DEPTH 2
+#define DEPTH 6
 #define INF 99999999
 #define column first
 #define value second
@@ -15,45 +16,43 @@ int minValue(Game &game, char piece, int actualDepth, int depth);
 int heuristic(Game &game, char piece);
 
 int MinimaxAI::nextMove(Game &game, char piece) {
-    int w = game.getWidth(), h = game.getHeight();
-    vector<vector<char>> table(w);
-    for (int i = 0; i < w; i++) {
-        vector<char> v(h);
-        for (int j = 0; j < h; j++)
-           v[j] = game.at(i, j);
-        table.push_back(v);
-    }
 
-    pair<int, int> sol = maxValue(game, piece, 0, DEPTH);
-    cout << "heuristic obtained: " << sol.value << endl;
+    pair<int, int> sol = maxValue(*game.clone(), piece, 0, DEPTH);
+    cout << "heuristic obtained: " << sol.value << endl << "column decided: " << sol.column + 1 << endl;
     return sol.column;
 }
 
 
 
 pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth) {
-    if (actualDepth >= depth) {
-        return {0,heuristic(game, piece)};
-    }
-
     int result = game.isFinished();
     if (result == TABLE_FULL)
         return {0,0};
 
     if (result == WIN_X) {
-        return {0, INF};
-    } else if (result == WIN_O){
         return {0, -INF};
+    } else if (result == WIN_O){
+        return {0, INF};
+    }
+
+    if (actualDepth >= depth) {
+        return {0,heuristic(game, piece)};
     }
 
     int best = -INF;
     int decision = 0;
 
+#ifdef DEBUG
+    cout << "Decisiones a tomar: ";
+#endif
     for (int i = 0; i < game.getWidth(); i++) {
         if (!game.isColumnFilled(i)) {
             Game * next = game.clone();
             next->insertPiece(piece, i);
             int v = minValue(*next, piece, actualDepth + 1, depth);
+#ifdef DEBUG
+            cout << v << " ";
+#endif
             if (v > best){
                 best = v;
                 decision = i;
@@ -61,25 +60,27 @@ pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth) {
             delete next;
         }
     }
-
+#ifdef DEBUG
+    cout << endl;
+#endif
     return {decision, best};
 }
 
 
 
 int minValue(Game &game, char piece, int actualDepth, int depth) {
-    if (actualDepth >= depth) {
-        return heuristic(game, piece);
-    }
-
     int result = game.isFinished();
     if (result == TABLE_FULL)
         return 0;
 
     if (result == WIN_X) {
-        return INF;
-    } else if (result == WIN_O){
         return -INF;
+    } else if (result == WIN_O){
+        return INF;
+    }
+
+    if (actualDepth >= depth) {
+        return heuristic(game, piece);
     }
 
     int best = INF;
@@ -104,12 +105,9 @@ int heuristic(Game &game, char piece) { // Es una mierda
     int longitudes[10];
     for(int i = 0; i<10; i++)
         longitudes[i] = 0;
-    bool visited[game.getWidth()][game.getHeight()];
-    for(int i = 0; i<game.getWidth(); i++)
-        for(int j = 0; j<game.getHeight(); j++)
-            visited[i][j] = false;
-    for(int i = 0; i < game.getWidth(); i++)
-        for(int j = game.getHeight(); j >= 0 && !visited[i][j] && game.at(i,j) != EMPTY; j--){
+
+    for(int i = 0; i < game.getHeight(); i++)
+        for(int j = game.getWidth(); j >= 0 && game.at(i,j) != EMPTY; j--){
             char actual = game.at(i, j);
             // count horizontal consecutives
             int cont = 1;
@@ -117,13 +115,11 @@ int heuristic(Game &game, char piece) { // Es una mierda
             while (J >= 0 && game.at(i,J) == actual) {
                 cont++;
                 J--;
-                visited[i][J] = true;
             }
             J = j + 1;
             while (J < game.getWidth() && game.at(i, J) == actual) {
                 cont++;
                 J++;
-                visited[i][J] = true;
             }
             longitudes[2*(actual==piece)+cont]++;
 
@@ -133,13 +129,11 @@ int heuristic(Game &game, char piece) { // Es una mierda
             while (I >= 0 && game.at(I,j) == actual) {
                 cont++;
                 I--;
-                visited[I][j] = true;
             }
             I = i + 1;
             while (I < game.getHeight() && game.at(I, j) == actual) {
                 cont++;
                 I++;
-                visited[I][j] = true;
             }
             longitudes[2*(actual==piece)+cont]++;
 
@@ -151,15 +145,13 @@ int heuristic(Game &game, char piece) { // Es una mierda
                 cont++;
                 I--;
                 J--;
-                visited[I][J] = true;
             }
             I = i + 1;
             J = j + 1;
-            while (I < game.getWidth() && J < game.getHeight() && game.at(I, J) == actual) {
+            while (I < game.getHeight() && J < game.getWidth() && game.at(I, J) == actual) {
                 cont++;
                 I++;
                 J++;
-                visited[I][J] = true;
             }
             longitudes[2*(actual==piece)+cont]++;
 
@@ -167,11 +159,10 @@ int heuristic(Game &game, char piece) { // Es una mierda
             cont = 1;
             I = i + 1;
             J = j - 1;
-            while (I < game.getWidth() && J >= 0 && game.at(I,J) == actual) {
+            while (I < game.getHeight() && J >= 0 && game.at(I,J) == actual) {
                 cont++;
                 I++;
                 J--;
-                visited[I][J] = true;
             }
             I = i - 1;
             J = j + 1;
@@ -179,7 +170,6 @@ int heuristic(Game &game, char piece) { // Es una mierda
                 cont++;
                 I--;
                 J++;
-                visited[I][J] = true;
             }
             longitudes[3*(actual==piece)+cont]++;
             
