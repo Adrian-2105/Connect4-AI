@@ -6,41 +6,56 @@
 
 using namespace std;
 
-#define DEPTH 6
+#define DEPTH 9
 #define INF 99999999
 #define column first
 #define value second
 
-pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth);
-int minValue(Game &game, char piece, int actualDepth, int depth);
+pair<int, int> maxValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta);
+int minValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta);
 int heuristic(Game &game, char piece);
 
 int MinimaxAI::nextMove(Game &game, char piece) {
 
-    pair<int, int> sol = maxValue(*game.clone(), piece, 0, DEPTH);
+    pair<int, int> sol;
+    for (int i = 0; i < game.getWidth(); i++) {
+        if (!game.isColumnFilled(i)) {
+            sol = maxValue(*game.clone(), i, piece, 0, DEPTH, -INF, INF);
+            break;
+        }
+    }
+
     cout << "heuristic obtained: " << sol.value << endl << "column decided: " << sol.column + 1 << endl;
     return sol.column;
 }
 
 
 
-pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth) {
+pair<int, int> maxValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta) {
     int result = game.isFinished();
     if (result == TABLE_FULL)
-        return {0,0};
+        return {n,0};
 
-    if (result == WIN_X) {
-        return {0, -INF};
-    } else if (result == WIN_O){
-        return {0, INF};
+    if (piece == PIECE_X) {
+        if (result == WIN_X)
+            return {n, INF};
+        else if (result == WIN_O) {
+            return {n, -INF};
+        }
+    }
+    else if (piece == PIECE_O) {
+        if (result == WIN_X)
+            return {n, -INF};
+        else if (result == WIN_O)
+            return {n, INF};
     }
 
     if (actualDepth >= depth) {
-        return {0,heuristic(game, piece)};
+        return {n, heuristic(game, piece)};
     }
 
     int best = -INF;
-    int decision = 0;
+    int decision = n;
 
 #ifdef DEBUG
     cout << "Decisiones a tomar: ";
@@ -49,15 +64,19 @@ pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth) {
         if (!game.isColumnFilled(i)) {
             Game * next = game.clone();
             next->insertPiece(piece, i);
-            int v = minValue(*next, piece, actualDepth + 1, depth);
+            int v = minValue(*next, i, piece == PIECE_X ? PIECE_O : PIECE_X, actualDepth + 1, depth, alpha, beta);
 #ifdef DEBUG
             cout << v << " ";
 #endif
+            delete next;
             if (v > best){
                 best = v;
                 decision = i;
             }
-            delete next;
+            if (best >= beta) {
+                return {decision, best};
+            }
+            alpha = max(best, alpha);
         }
     }
 #ifdef DEBUG
@@ -68,15 +87,22 @@ pair<int, int> maxValue(Game &game, char piece, int actualDepth, int depth) {
 
 
 
-int minValue(Game &game, char piece, int actualDepth, int depth) {
+int minValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta) {
     int result = game.isFinished();
     if (result == TABLE_FULL)
         return 0;
 
-    if (result == WIN_X) {
-        return -INF;
-    } else if (result == WIN_O){
-        return INF;
+    if (piece == PIECE_X) {
+        if (result == WIN_X)
+            return -INF;
+        else if (result == WIN_O)
+            return INF;
+    }
+    else if (piece == PIECE_O) {
+        if (result == WIN_X)
+            return INF;
+        else if (result == WIN_O)
+            return -INF;
     }
 
     if (actualDepth >= depth) {
@@ -88,11 +114,15 @@ int minValue(Game &game, char piece, int actualDepth, int depth) {
     for (int i = 0; i < game.getWidth(); i++) {
         if (!game.isColumnFilled(i)) {
             Game * next = game.clone();
-            next->insertPiece(PIECE_X, i);
-            int v = maxValue(*next, piece, actualDepth + 1, depth).value;
+            next->insertPiece(piece, i);
+            int v = maxValue(*next, i, piece == PIECE_X ? PIECE_O : PIECE_X, actualDepth + 1, depth, alpha, beta).value;
+            delete next;
             if (v < best)
                 best = v;
-            delete next;
+            if (best <= alpha)
+                return best;
+            beta = min(best, beta);
+
         }
     }
 
