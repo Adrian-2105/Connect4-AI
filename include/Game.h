@@ -12,26 +12,42 @@
 
 class Game {
 private:
-    char** table;
-    int* piecePosition;
-    int w, h;
-    int n;
+    char **table;
+    int *piecePosition;
+    int width, height;
+    int nPiecesConnected;
 
     bool checkHorizontal(int i, int j);
+
     bool checkVertical(int i, int j);
+
     bool checkDiagonalUpToDown(int i, int j);
+
     bool checkDiagonalDownToUp(int i, int j);
+
 public:
     Game(int n, int w, int h);
+
     ~Game();
 
-    Game* clone();
+    // To access the table with game[i][j]
+    inline char *operator[](int index) const {
+        return table[index];
+    }
 
-    int getWidth() const;
+    inline int getWidth() const {
+        return width;
+    }
 
-    int getHeight() const;
+    inline int getHeight() const {
+        return height;
+    }
 
-    char at(int i, int j) const;
+    inline char at(int i, int j) const {
+        return table[i][j];
+    }
+
+    Game *clone();
 
     void init();
 
