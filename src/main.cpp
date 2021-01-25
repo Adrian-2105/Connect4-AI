@@ -16,10 +16,12 @@ using namespace sf;
 #define NUM_COLUMNS 8
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <Windows.height>
 #else
 #include <unistd.h>
 #endif
+
+#define VERBOSE
 
 void drawScreen(RenderWindow &window, const Game &game);
 
@@ -42,6 +44,9 @@ int main() {
 
     Event event{};
     drawScreen(window, game);
+#ifdef VERBOSE
+    game.print();
+#endif
     while (window.isOpen() && ((result = game.isFinished()) == UNFINISHED)) {
 
         bool clicked = false;
@@ -60,12 +65,15 @@ int main() {
         }
 
         /*
-        n = bot1.nextMove(*game.clone(), PIECE_X);
-        game.insertPiece(PIECE_X, n);
+        nPiecesConnected = bot1.nextMove(*game.clone(), PIECE_X);
+        game.insertPiece(PIECE_X, nPiecesConnected);
 
         sleep(1);
          */
         drawScreen(window, game);
+#ifdef VERBOSE
+        game.print();
+#endif
 
         if ((result = game.isFinished()) != UNFINISHED)
             break;
@@ -75,6 +83,9 @@ int main() {
         game.insertPiece(PIECE_O, n);
 
         drawScreen(window, game);
+#ifdef VERBOSE
+        game.print();
+#endif
         //sleep(1);
     }
 
