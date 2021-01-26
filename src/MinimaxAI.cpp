@@ -32,7 +32,7 @@ int MinimaxAI::nextMove(Game &game, char piece) {
 
 
 pair<int, int> maxValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta) {
-    int result = game.getStatus();
+    int result = game.getGameStatus();
     if (result == TABLE_FULL)
         return {n,0};
 
@@ -88,7 +88,7 @@ pair<int, int> maxValue(Game &game, int n, char piece, int actualDepth, int dept
 
 
 int minValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta) {
-    int result = game.getStatus();
+    int result = game.getGameStatus();
     if (result == TABLE_FULL)
         return 0;
 

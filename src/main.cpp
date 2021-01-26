@@ -26,7 +26,7 @@ using namespace std;
 
 void drawScreen(RenderWindow &window, const Game &game);
 
-int DIAMETER;
+uint DIAMETER;
 
 int main() {
 
@@ -38,7 +38,8 @@ int main() {
 
     game.init();
 
-    int result, n;
+    GameStatus result;
+    uint n;
     DIAMETER = WINDOW_WIDTH / NUM_COLUMNS;
 
     Event event{};
@@ -46,7 +47,7 @@ int main() {
 #ifdef VERBOSE
     game.print();
 #endif
-    while (window.isOpen() && ((result = game.getStatus()) == UNFINISHED)) {
+    while (window.isOpen() && ((result = game.getGameStatus()) == UNFINISHED)) {
 
         bool clicked = false;
         while (window.pollEvent(event) || !clicked) {
@@ -55,7 +56,7 @@ int main() {
                 return 0;
             }
             else if (event.type == Event::MouseButtonPressed) {
-                int selected = event.mouseButton.x / DIAMETER;
+                uint selected = event.mouseButton.x / DIAMETER;
                 if (selected >= 0 && selected < game.getWidth()) {
                     game.insertPiece(PIECE_PLAYER_1, event.mouseButton.x / DIAMETER);
                     clicked = true;
@@ -74,7 +75,7 @@ int main() {
         game.print();
 #endif
 
-        if ((result = game.getStatus()) != UNFINISHED)
+        if ((result = game.getGameStatus()) != UNFINISHED)
             break;
 
         n = bot2.nextMove(*game.clone(), PIECE_PLAYER_2);
@@ -100,8 +101,8 @@ int main() {
 
 void drawScreen(RenderWindow &window, const Game &game) {
     window.clear(Color::Blue);
-    for (int i = 0; i < game.getHeight(); i++) {
-        for (int j = 0; j < game.getWidth(); j++) {
+    for (uint i = 0; i < game.getHeight(); i++) {
+        for (uint j = 0; j < game.getWidth(); j++) {
             Color c = game.at(i, j) == EMPTY ? Color::White : game.at(i, j) == PIECE_PLAYER_1 ? Color::Red : Color::Yellow;
             CircleShape cs(DIAMETER / 2);
             cs.setFillColor(c);

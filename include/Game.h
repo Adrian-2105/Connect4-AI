@@ -1,6 +1,9 @@
 #ifndef GAME_H
 #define GAME_H
 
+typedef char Piece;
+typedef unsigned int uint;
+
 // Type of squares on the table
 #define EMPTY           '.'
 #define PIECE_PLAYER_1  'X'
@@ -14,44 +17,54 @@ enum GameStatus {
 class Game {
 private:
     // Properties
-    char **table;
-    int *piecePosition;
-    int width, height;
-    int nPiecesConnected;
+    Piece **table;
+    uint *piecePosition;
+    uint width, height;
+    uint nPiecesConnected;
+    GameStatus status;
+
+    // Helper methods
+    void changeStatus(uint i, uint j);
 
 public:
     // Constructor
-    Game(int nPiecesConnected, int width, int height);
+    Game(uint nPiecesConnected, uint width, uint height);
 
     // Destroyer
     ~Game();
 
     // To access the table with game[i][j]
-    inline char *operator[](int index) const {
+    inline Piece *operator[](uint index) const {
         return table[index];
     }
 
     /* Getters */
-    inline int getWidth() const {
+    inline uint getWidth() const {
         return width;
     }
 
-    inline int getHeight() const {
+    inline uint getHeight() const {
         return height;
     }
 
-    inline char at(int i, int j) const {
+    inline uint getNPiecesConnected() const {
+        return nPiecesConnected;
+    }
+
+    inline GameStatus getGameStatus() const {
+        return status;
+    }
+
+    inline Piece at(uint i, uint j) const {
         return table[i][j];
     }
 
     /* Main methods */
     void init();
 
-    GameStatus getStatus();
+    bool insertPiece(Piece piece, uint column);
 
-    bool insertPiece(char piece, int column);
-
-    bool isColumnFilled(int column);
+    bool isColumnFilled(uint column);
 
     void print();
 
