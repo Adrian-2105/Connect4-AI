@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include "../include/Game.h"
 
 using namespace std;
@@ -8,14 +9,19 @@ Game::Game(int _nPiecesConnected, int _width, int _height) :
         width(_width),
         height(_height) {
 
+    // We use a contiguous array to minimize cache misses
     char *auxTable = new char[width * height];
 
+    // And store the pointer of each row
     table = new char *[height];
-
     for (int i = 0; i < height; i++)
         table[i] = &auxTable[i * width];
 
+    // It's an auxiliary array to make the inserts more efficiently
     piecePosition = new int[width];
+
+    // Initialize the game
+    init();
 }
 
 Game::~Game() {
@@ -24,116 +30,72 @@ Game::~Game() {
     delete[] piecePosition;
 }
 
-Game *Game::clone() {
-    Game *newGame = new Game(nPiecesConnected, width, height);
-
-    for (int i = 0; i < height; i++)
-        for (int j = 0; j < width; j++)
-            newGame->table[i][j] = table[i][j];
-
-    for (int j = 0; j < width; j++)
-        newGame->piecePosition[j] = piecePosition[j];
-
-    return newGame;
-}
-
 void Game::init() {
-    for (int i = 0; i < height; i++)
-        for (int j = 0; j < width; j++)
-            table[i][j] = EMPTY;
+    // Initialize the matrix to EMPTY
+    memset(table[0], EMPTY, width * height);
 
-    for (int i = 0; i < width; i++)
-        piecePosition[i] = height - 1;
+    // Initialize the helper array
+    for (int j = 0; j < width; j++)
+        piecePosition[j] = height - 1;
 }
 
-bool Game::insertPiece(char piece, int column) {
-    if (piecePosition[column] < 0)
-        return false;
+GameStatus Game::getStatus() {
+    // Check if any player has won the game
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            char actual = table[i][j];
+            if (actual != EMPTY) {
+                // Check vertical
+                for (int I = i + 1, cont = 1; I < height && table[I][j] == actual; I++) {
+                    cont++;
+                    if (cont >= nPiecesConnected)
+                        return table[i][j] == PIECE_PLAYER_1 ? WIN_PLAYER_1 : WIN_PLAYER_2;
+                }
 
-    table[piecePosition[column]][column] = piece;
-    piecePosition[column]--;
-    return true;
-}
+                // Check horizontal
+                for (int J = j + 1, cont = 1; J < width && table[i][J] == actual; J++) {
+                    cont++;
+                    if (cont >= nPiecesConnected)
+                        return table[i][j] == PIECE_PLAYER_1 ? WIN_PLAYER_1 : WIN_PLAYER_2;
+                }
 
-int Game::isFinished() {
-    for (int i = 0; i < height; i++)
-        for (int j = 0; j < width; j++)
-            if (table[i][j] != EMPTY && (checkHorizontal(i, j) || checkVertical(i, j) || checkDiagonalUpToDown(i, j) ||
-                                         checkDiagonalDownToUp(i, j)))
-                return table[i][j] == PIECE_X ? WIN_X : WIN_O;
+                // Check diagonal up left to down right
+                for (int I = i + 1, J = j + 1, cont = 1; I < height && J < width && table[I][J] == actual; I++, J++) {
+                    cont++;
+                    if (cont >= nPiecesConnected)
+                        return table[i][j] == PIECE_PLAYER_1 ? WIN_PLAYER_1 : WIN_PLAYER_2;
+                }
 
-    for (int i = 0; i < width; i++)
-        if (piecePosition[i] >= 0)
+                // Check diagonal up right to down left
+                for (int I = i + 1, J = j - 1, cont = 1; I < height && J >= 0 && table[I][J] == actual; I++, J--) {
+                    cont++;
+                    if (cont >= nPiecesConnected)
+                        return table[i][j] == PIECE_PLAYER_1 ? WIN_PLAYER_1 : WIN_PLAYER_2;
+                }
+
+            }
+        }
+    }
+
+    // Otherwise, check if the game is not finished yet
+    for (int j = 0; j < width; j++)
+        if (piecePosition[j] >= 0)
             return UNFINISHED;
+
+    // If not, then the game is over because the table is full
     return TABLE_FULL;
 }
 
-bool Game::checkHorizontal(int i, int j) {
-    char actual = table[i][j];
-    int cont = 1;
+bool Game::insertPiece(char piece, int column) {
+    // Checks if we can insert a piece in that column
+    if (isColumnFilled(column))
+        return false;
 
-    int J = j + 1;
-    while (J < width && table[i][J] == actual) {
-        cont++;
-        if (cont >= nPiecesConnected)
-            return true;
-        J++;
-    }
+    // If we can, we add the piece to the table and update the auxiliary array
+    table[piecePosition[column]][column] = piece;
+    piecePosition[column]--;
 
-    return false;
-}
-
-bool Game::checkVertical(int i, int j) {
-    char actual = table[i][j];
-    int cont = 1;
-
-    int I = i + 1;
-    while (I < height && table[I][j] == actual) {
-        cont++;
-        if (cont >= nPiecesConnected)
-            return true;
-        I++;
-    }
-
-    return false;
-}
-
-bool Game::checkDiagonalUpToDown(int i, int j) {
-    char actual = table[i][j];
-    int cont = 1;
-    int I = i + 1, J = j + 1;
-    while (I < height && J < width && table[I][J] == actual) {
-        cont++;
-        if (cont >= nPiecesConnected)
-            return true;
-        I++;
-        J++;
-    }
-
-    return false;
-}
-
-bool Game::checkDiagonalDownToUp(int i, int j) {
-    char actual = table[i][j];
-    int cont = 1;
-
-    int I = i + 1, J = j - 1;
-    while (I < height && J >= 0 && table[I][J] == actual) {
-        cont++;
-        I++;
-        J--;
-    }
-
-    I = i - 1, J = j + 1;
-    while (I >= 0 && J < width && table[I][J] == actual) {
-        cont++;
-        if (cont >= nPiecesConnected)
-            return true;
-        I--;
-        J++;
-    }
-
-    return false;
+    return true;
 }
 
 bool Game::isColumnFilled(int column) {
@@ -141,22 +103,35 @@ bool Game::isColumnFilled(int column) {
 }
 
 void Game::print() {
+    // Header
     cout << "  ";
-    for (int i = 1; i <= width; i++)
-        cout << i << " ";
-
+    for (int k = 1; k <= width; k++)
+        cout << k << " ";
     cout << endl;
+
+    // Body
     for (int i = 0; i < height; i++) {
         cout << "| ";
-        for (int j = 0; j < width; j++) {
+        for (int j = 0; j < width; j++)
             cout << table[i][j] << " ";
-        }
-        cout << "|";
-        cout << endl;
+        cout << "|" << endl;
     }
+
+    // Footer
     cout << "+ ";
     for (int k = 0; k < width; k++)
         cout << "_ ";
-    cout << "+";
-    cout << endl;
+    cout << "+" << endl;
+}
+
+Game *Game::clone() {
+    // We create a new Game
+    Game *newGame = new Game(nPiecesConnected, width, height);
+
+    // And copy the both arrays
+    memcpy(newGame->table[0], table[0], width * height);
+    memcpy(newGame->piecePosition, piecePosition, width * sizeof(int));
+
+    // Return the new Game
+    return newGame;
 }

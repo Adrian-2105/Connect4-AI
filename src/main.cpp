@@ -1,10 +1,17 @@
 #include <iostream>
+#include <SFML/Graphics.hpp>
+
+#ifdef _WIN32
+#include <Windows.height>
+#else
+#include <unistd.h>
+#endif
 
 #include "../include/Game.h"
 #include "../include/MinimaxAI.h"
 
-#include <SFML/Graphics.hpp>
 using namespace sf;
+using namespace std;
 
 #define MAX_FPS 10
 
@@ -15,19 +22,11 @@ using namespace sf;
 #define NUM_ROWS 7
 #define NUM_COLUMNS 8
 
-#ifdef _WIN32
-#include <Windows.height>
-#else
-#include <unistd.h>
-#endif
-
 #define VERBOSE
 
 void drawScreen(RenderWindow &window, const Game &game);
 
 int DIAMETER;
-
-using namespace std;
 
 int main() {
 
@@ -47,7 +46,7 @@ int main() {
 #ifdef VERBOSE
     game.print();
 #endif
-    while (window.isOpen() && ((result = game.isFinished()) == UNFINISHED)) {
+    while (window.isOpen() && ((result = game.getStatus()) == UNFINISHED)) {
 
         bool clicked = false;
         while (window.pollEvent(event) || !clicked) {
@@ -58,15 +57,15 @@ int main() {
             else if (event.type == Event::MouseButtonPressed) {
                 int selected = event.mouseButton.x / DIAMETER;
                 if (selected >= 0 && selected < game.getWidth()) {
-                    game.insertPiece(PIECE_X, event.mouseButton.x / DIAMETER);
+                    game.insertPiece(PIECE_PLAYER_1, event.mouseButton.x / DIAMETER);
                     clicked = true;
                 }
             }
         }
 
         /*
-        nPiecesConnected = bot1.nextMove(*game.clone(), PIECE_X);
-        game.insertPiece(PIECE_X, nPiecesConnected);
+        nPiecesConnected = bot1.nextMove(*game.clone(), PIECE_PLAYER_1);
+        game.insertPiece(PIECE_PLAYER_1, nPiecesConnected);
 
         sleep(1);
          */
@@ -75,12 +74,12 @@ int main() {
         game.print();
 #endif
 
-        if ((result = game.isFinished()) != UNFINISHED)
+        if ((result = game.getStatus()) != UNFINISHED)
             break;
 
-        n = bot2.nextMove(*game.clone(), PIECE_O);
+        n = bot2.nextMove(*game.clone(), PIECE_PLAYER_2);
 
-        game.insertPiece(PIECE_O, n);
+        game.insertPiece(PIECE_PLAYER_2, n);
 
         drawScreen(window, game);
 #ifdef VERBOSE
@@ -89,9 +88,9 @@ int main() {
         //sleep(1);
     }
 
-    if (result == WIN_X)
+    if (result == WIN_PLAYER_1)
         cout << "X WIN!!!\n";
-    else if (result == WIN_O)
+    else if (result == WIN_PLAYER_2)
         cout << "O WIN!!!\n";
     else
         cout << "Draw\n";
@@ -103,7 +102,7 @@ void drawScreen(RenderWindow &window, const Game &game) {
     window.clear(Color::Blue);
     for (int i = 0; i < game.getHeight(); i++) {
         for (int j = 0; j < game.getWidth(); j++) {
-            Color c = game.at(i, j) == EMPTY ? Color::White : game.at(i, j) == PIECE_X ? Color::Red : Color::Yellow;
+            Color c = game.at(i, j) == EMPTY ? Color::White : game.at(i, j) == PIECE_PLAYER_1 ? Color::Red : Color::Yellow;
             CircleShape cs(DIAMETER / 2);
             cs.setFillColor(c);
             cs.setPosition(j * DIAMETER, i * DIAMETER);

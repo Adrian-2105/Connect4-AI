@@ -32,21 +32,21 @@ int MinimaxAI::nextMove(Game &game, char piece) {
 
 
 pair<int, int> maxValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta) {
-    int result = game.isFinished();
+    int result = game.getStatus();
     if (result == TABLE_FULL)
         return {n,0};
 
-    if (piece == PIECE_X) {
-        if (result == WIN_X)
+    if (piece == PIECE_PLAYER_1) {
+        if (result == WIN_PLAYER_1)
             return {n, INF};
-        else if (result == WIN_O) {
+        else if (result == WIN_PLAYER_2) {
             return {n, -INF};
         }
     }
-    else if (piece == PIECE_O) {
-        if (result == WIN_X)
+    else if (piece == PIECE_PLAYER_2) {
+        if (result == WIN_PLAYER_1)
             return {n, -INF};
-        else if (result == WIN_O)
+        else if (result == WIN_PLAYER_2)
             return {n, INF};
     }
 
@@ -64,7 +64,7 @@ pair<int, int> maxValue(Game &game, int n, char piece, int actualDepth, int dept
         if (!game.isColumnFilled(i)) {
             Game * next = game.clone();
             next->insertPiece(piece, i);
-            int v = minValue(*next, i, piece == PIECE_X ? PIECE_O : PIECE_X, actualDepth + 1, depth, alpha, beta);
+            int v = minValue(*next, i, piece == PIECE_PLAYER_1 ? PIECE_PLAYER_2 : PIECE_PLAYER_1, actualDepth + 1, depth, alpha, beta);
 #ifdef DEBUG
             cout << v << " ";
 #endif
@@ -88,20 +88,20 @@ pair<int, int> maxValue(Game &game, int n, char piece, int actualDepth, int dept
 
 
 int minValue(Game &game, int n, char piece, int actualDepth, int depth, int alpha, int beta) {
-    int result = game.isFinished();
+    int result = game.getStatus();
     if (result == TABLE_FULL)
         return 0;
 
-    if (piece == PIECE_X) {
-        if (result == WIN_X)
+    if (piece == PIECE_PLAYER_1) {
+        if (result == WIN_PLAYER_1)
             return -INF;
-        else if (result == WIN_O)
+        else if (result == WIN_PLAYER_2)
             return INF;
     }
-    else if (piece == PIECE_O) {
-        if (result == WIN_X)
+    else if (piece == PIECE_PLAYER_2) {
+        if (result == WIN_PLAYER_1)
             return INF;
-        else if (result == WIN_O)
+        else if (result == WIN_PLAYER_2)
             return -INF;
     }
 
@@ -115,7 +115,7 @@ int minValue(Game &game, int n, char piece, int actualDepth, int depth, int alph
         if (!game.isColumnFilled(i)) {
             Game * next = game.clone();
             next->insertPiece(piece, i);
-            int v = maxValue(*next, i, piece == PIECE_X ? PIECE_O : PIECE_X, actualDepth + 1, depth, alpha, beta).value;
+            int v = maxValue(*next, i, piece == PIECE_PLAYER_1 ? PIECE_PLAYER_2 : PIECE_PLAYER_1, actualDepth + 1, depth, alpha, beta).value;
             delete next;
             if (v < best)
                 best = v;

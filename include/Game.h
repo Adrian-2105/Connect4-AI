@@ -1,33 +1,29 @@
 #ifndef GAME_H
 #define GAME_H
 
-#define EMPTY     '.'
-#define PIECE_X   'X'
-#define PIECE_O   'O'
+// Type of squares on the table
+#define EMPTY           '.'
+#define PIECE_PLAYER_1  'X'
+#define PIECE_PLAYER_2  'O'
 
-#define UNFINISHED 0
-#define TABLE_FULL 1
-#define WIN_X 2
-#define WIN_O 3
+// GameStatus of the game
+enum GameStatus {
+    UNFINISHED = 0, TABLE_FULL, WIN_PLAYER_1, WIN_PLAYER_2
+};
 
 class Game {
 private:
+    // Properties
     char **table;
     int *piecePosition;
     int width, height;
     int nPiecesConnected;
 
-    bool checkHorizontal(int i, int j);
-
-    bool checkVertical(int i, int j);
-
-    bool checkDiagonalUpToDown(int i, int j);
-
-    bool checkDiagonalDownToUp(int i, int j);
-
 public:
-    Game(int n, int w, int h);
+    // Constructor
+    Game(int nPiecesConnected, int width, int height);
 
+    // Destroyer
     ~Game();
 
     // To access the table with game[i][j]
@@ -35,6 +31,7 @@ public:
         return table[index];
     }
 
+    /* Getters */
     inline int getWidth() const {
         return width;
     }
@@ -47,17 +44,18 @@ public:
         return table[i][j];
     }
 
-    Game *clone();
-
+    /* Main methods */
     void init();
 
-    bool insertPiece(char piece, int column);
+    GameStatus getStatus();
 
-    int isFinished();
+    bool insertPiece(char piece, int column);
 
     bool isColumnFilled(int column);
 
     void print();
+
+    Game *clone();
 };
 
 #endif
